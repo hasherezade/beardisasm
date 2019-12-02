@@ -1,0 +1,6 @@
+[submodule "bearparser"]
+	path = bearparser
+	url = https://github.com/hasherezade/bearparser.git
+[submodule "capstone"]
+	path = capstone
+	url = https://github.com/aquynh/capstone.git
