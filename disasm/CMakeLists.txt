@@ -20,6 +20,7 @@ include_directories (
 )
 
 set (hdrs
+    include/beardisasm.h
     include/AddrConverter.h
     include/MnemType.h
     include/Context.h
