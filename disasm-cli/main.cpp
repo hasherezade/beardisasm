@@ -28,15 +28,14 @@ FileView* tryLoading(QString &fName)
     return fileView;
 }
 
-void disasmPeFile(PEFile *exe)
+void disasmPeFile(PEFile *exe, offset_t func_offset)
 {
     if (!exe) return;
-    
-    offset_t ep_raw = exe->getEntryPoint(Executable::RAW);
-    const minidis::DisasmSettings basicSettings(0, false, false);
+
+    const minidis::DisasmSettings basicSettings(0, false, true);
     
     minidis::PeDisasm disasm1(exe);
-    disasm1.init(ep_raw);
+    disasm1.init(func_offset);
     if (!disasm1.fillTable(basicSettings)) return;
     for (size_t i = 0; ; i++) {
         DisasmChunk* chunk = disasm1.getChunkAtIndex(i);
@@ -97,9 +96,11 @@ int main(int argc, char *argv[])
 
         //std::cout << "Parsing executable..." << std::endl;
         Executable *exe = ExeFactory::build(buf, exeType);
+        
+        offset_t ep_raw = exe->getEntryPoint(Executable::RAW);
         PEFile *pe = dynamic_cast<PEFile*>(exe);
         if (pe) {
-            disasmPeFile(pe);
+            disasmPeFile(pe, ep_raw);
         }
         
         delete exe;
