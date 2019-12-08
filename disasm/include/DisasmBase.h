@@ -18,9 +18,17 @@ namespace minidis {
     public:
         DisasmSettings()
         {
-           m_maxDisasmElements = MAX_DISASM_EL;
-           m_stopAtBlockEnd = true;
-           m_stopAtFuncEnd = true;
+            m_maxDisasmElements = MAX_DISASM_EL;
+            m_stopAtBlockEnd = true;
+            m_stopAtFuncEnd = true;
+        }
+        
+        DisasmSettings(size_t maxElements, bool stopAtBlockEnd, bool stopAtFuncEnd)
+        {
+            if (maxElements == 0) maxElements = MAX_DISASM_EL;
+            m_maxDisasmElements = maxElements;
+            m_stopAtBlockEnd = stopAtBlockEnd;
+            m_stopAtFuncEnd = stopAtFuncEnd;
         }
         
         size_t getMaxDisasmElements() const
