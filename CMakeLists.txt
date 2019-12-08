@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 2.8.13)
-project (vidi)
+project (beardisasm)
 
 SET(COMMIT_HASH "" CACHE STRING "Commit Hash")
 
@@ -59,6 +59,8 @@ set (MINIDIS_LIB $<TARGET_FILE:mini_disasm> CACHE FILE "MiniDisasm library path"
 add_subdirectory (${CAPSTONE_DIR})
 include_directories (${CAPSTONE_INC})
 set (CAPSTONE_LIB $<TARGET_FILE:capstone-static> CACHE FILE  CapstoneLib)
+
+add_subdirectory (disasm-cli)
 
 # dependencies
 if (USE_UDIS86)
