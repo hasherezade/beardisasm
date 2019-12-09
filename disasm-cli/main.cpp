@@ -44,19 +44,35 @@ void disasmPeFile(PEFile *exe, offset_t func_offset)
             << " : "
             << chunk->toString().toStdString();
             
-            if (chunk->isBranching()) {
-                offset_t target = chunk->getTargetAddr();
+        offset_t target = chunk->getTargetAddr();
+        QString str = disasm1.getStringAt(target, chunk->getTargetAddrType());
+        if (str.length() > 0) {
+            std::cout << " : " << str.toStdString();
+        }
+        if (chunk->isBranching()) {
                 
+            if (target != INVALID_ADDR) {
                 std::cout << " -> "
                     << std::hex << exe->convertAddr(target, chunk->getTargetAddrType(), Executable::VA);
-                if (disasm1.isImportCall(i)) {
-                    std::cout << " ; " << disasm1.getImportName(target, chunk->getTargetAddrType()).toStdString();
-                }
-                std::cout << "\n----";
             }
-            std::cout << "\n";
+            if (disasm1.isImportCall(i)) {
+                std::cout << " ; " << disasm1.getImportName(target, chunk->getTargetAddrType()).toStdString();
+            }
+            std::cout << "\n----";
+        }
+        std::cout << "\n";
     }
-    
+}
+
+offset_t convertHex(const QString &str)
+{
+    offset_t offset = INVALID_ADDR;
+    bool bStatus = false;
+    offset = str.toUInt(&bStatus,16);
+    if (!bStatus) {
+        return INVALID_ADDR;
+    }
+    return offset;
 }
 
 int main(int argc, char *argv[])
@@ -67,14 +83,16 @@ int main(int argc, char *argv[])
 
     if (argc < 2) {
         std::cout << "Bearparser version: " <<  BEARPARSER_VERSION << "\n";
-        std::cout << "Args: <PE file>\n";
+        std::cout << "Args: <PE file> <func RVA>\n";
         return 0;
     }
 
     int status = 0;
     QString fName = QString(argv[1]);
-    
-    
+    offset_t offset = INVALID_ADDR;
+    if (argc >= 2) {
+        offset = convertHex(QString(argv[2]));
+    }
     try {
         FileView* fileView = tryLoading(fName);
         if (!fileView) return -1;
@@ -96,11 +114,13 @@ int main(int argc, char *argv[])
 
         //std::cout << "Parsing executable..." << std::endl;
         Executable *exe = ExeFactory::build(buf, exeType);
-        
-        offset_t ep_raw = exe->getEntryPoint(Executable::RAW);
+        offset_t func_raw_addr = exe->convertAddr(offset, Executable::RVA, Executable::RAW);
+        if (func_raw_addr == INVALID_ADDR) {
+            func_raw_addr = exe->getEntryPoint(Executable::RAW);
+        }
         PEFile *pe = dynamic_cast<PEFile*>(exe);
         if (pe) {
-            disasmPeFile(pe, ep_raw);
+            disasmPeFile(pe, func_raw_addr);
         }
         
         delete exe;
