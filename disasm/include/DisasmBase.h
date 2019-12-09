@@ -195,7 +195,7 @@ public:
 
     virtual bool isBranching(size_t index) = 0;
     bool isConditionalBranching(size_t index) const { return isConditionalBranching(getMnemTypeAtIndex(index)); }
-    bool isUnonditionalBranching(size_t index) const { return isUnonditionalBranching(getMnemTypeAtIndex(index)); }
+    bool isUnconditionalBranching(size_t index) const { return isUnconditionalBranching(getMnemTypeAtIndex(index)); }
 
     target_state getTargetState(const size_t index) const; //TODO: refactor it
 //----
