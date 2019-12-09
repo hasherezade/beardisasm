@@ -69,8 +69,10 @@ public:
 
     static bool isBranching(const mnem_type &mType);
     static bool isConditionalBranching(const mnem_type &mType);
-    static bool isUnonditionalBranching(const mnem_type &mType);
+    static bool isUnconditionalBranching(const mnem_type &mType);
 
+    static QString getStringAt(Executable *exe, offset_t target, Executable::addr_type aType);
+    
 /* non-static */
     DisasmBase(Executable* exe, offset_t startOffset) :
         m_Exe(exe), m_startOffset(startOffset),
@@ -89,6 +91,11 @@ public:
         return m_disasmBuf.at(index);
     }
     
+    QString getStringAt(offset_t target, Executable::addr_type aType)
+    {
+        return DisasmBase::getStringAt(this->m_Exe, target, aType);
+    }
+
     virtual bool isBranching(offset_t offset, Executable::addr_type aType) = 0;
     
     /**

@@ -18,12 +18,7 @@ bool Tracer::resolveOffset(offset_t offset, Executable::addr_type aType)
 
 QString Tracer::getStringAt(offset_t target)
 {
-    QString str = this->m_Exe->getStringValue(target);
-    if (str.size() == 1) {
-        str = this->m_Exe->getWAsciiStringValue(target, 100);
-    }
-    if (str.trimmed().length() == 0) return "";
-    return str;
+    return DisasmBase::getStringAt(this->m_Exe, target, Executable::RAW);
 }
 
 CodeBlock* Tracer::getOrMakeCodeBlockAt(offset_t offset)

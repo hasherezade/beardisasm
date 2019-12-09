@@ -35,7 +35,7 @@ bool DisasmBase::isConditionalBranching(const mnem_type &mType)
     return false;
 }
 
-bool DisasmBase::isUnonditionalBranching(const mnem_type &mType)
+bool DisasmBase::isUnconditionalBranching(const mnem_type &mType)
 {
     switch (mType) {
         case MT_JUMP:
@@ -130,6 +130,17 @@ bool DisasmBase::isPushRet(int index) const
 bool DisasmBase::isInterruptX(size_t index)
 {
    return (getMnemTypeAtIndex(index) == MT_INTX);
+}
+
+QString DisasmBase::getStringAt(Executable *exe, offset_t target, Executable::addr_type aType)
+{
+    offset_t raw_target = exe->convertAddr(target, aType, Executable::RAW);
+    QString str = exe->getStringValue(raw_target);
+    if (str.size() == 1) {
+        str = exe->getWAsciiStringValue(raw_target, 100);
+    }
+    if (str.trimmed().length() == 0) return "";
+    return str;
 }
 
 offset_t DisasmBase::getImmediate(offset_t lval, Executable::addr_type outType, Executable::addr_type hintType) const
