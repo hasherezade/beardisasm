@@ -10,8 +10,17 @@ message(STATUS "udis_lib='${UDIS86_LIB}'")
 message(STATUS "capstone_includes='${CAPSTONE_INC}'")
 message(STATUS "capstone_lib='${CAPSTONE_LIB}'")
 
-find_package(Qt5Widgets REQUIRED)
-find_package(Qt5Core REQUIRED)
+if(USE_QT4)
+	add_compile_definitions(WITH_QT4)
+	find_package (Qt4 REQUIRED)
+	include_directories( ${QT_INCLUDE_DIR} ${QT_QTCORE_INCLUDE_DIR} )
+	INCLUDE( ${QT_USE_FILE} )
+	ADD_DEFINITIONS( ${QT_DEFINITIONS} )
+else()
+	add_compile_definitions(WITH_QT5)
+	find_package(Qt5Core REQUIRED)
+	get_target_property(QtCore_location Qt5::Core LOCATION)
+endif()
 
 include_directories (${PARSER_INC} ${UDIS86_DIR} ${CAPSTONE_INC})
 
@@ -91,8 +100,6 @@ set (dos_srcs
     dos/DosTracer.cpp
 )
 
-QT5_WRAP_CPP (hdrs_moc ${hdrs} ${pe_hdrs} ${dllparse_hdrs})
-
 SOURCE_GROUP("Source Files\\Auto Generated" FILES ${hdrs_moc} ${rcc_src} )
 
 SOURCE_GROUP("Source Files\\pe" FILES ${pe_srcs} )
@@ -101,20 +108,30 @@ SOURCE_GROUP("Header Files\\pe" FILES ${pe_hdrs} )
 SOURCE_GROUP("Source Files\\dos" FILES ${dos_srcs} )
 SOURCE_GROUP("Header Files\\dos" FILES ${dos_hdrs} )
 
-SOURCE_GROUP("Source Files\\cdis" FILES ${cd_srcs} )
-SOURCE_GROUP("Header Files\\cdis" FILES ${cd_hdrs} )
-
 if (VIDI_USE_UDIS86)
     SOURCE_GROUP("Source Files\\udis" FILES ${ud_srcs} )
     SOURCE_GROUP("Header Files\\udis" FILES ${ud_hdrs} )
+else()
+    SOURCE_GROUP("Source Files\\cdis" FILES ${cd_srcs} )
+    SOURCE_GROUP("Header Files\\cdis" FILES ${cd_hdrs} )
 endif ()
 
 add_library (mini_disasm STATIC ${hdrs_moc} ${hdrs} ${srcs} ${pe_hdrs} ${pe_srcs} ${dos_hdrs} ${dos_srcs} ${ud_hdrs} ${ud_srcs} ${cd_hdrs} ${cd_srcs})
+
 if (VIDI_USE_UDIS86)
-    target_link_libraries (mini_disasm ${PARSER_LIB} ${UDIS86_LIB} Qt5::Core Qt5::Widgets )
+    target_link_libraries (mini_disasm ${PARSER_LIB} ${UDIS86_LIB} )
 else()
-    target_link_libraries (mini_disasm ${PARSER_LIB} ${CAPSTONE_LIB} Qt5::Core Qt5::Widgets)
+    target_link_libraries (mini_disasm ${PARSER_LIB} ${CAPSTONE_LIB} )
 endif()
+
+if(USE_QT4)
+    qt4_wrap_cpp(hdrs_moc ${hdrs} ${pe_hdrs} ${dllparse_hdrs})
+    target_link_libraries ( ${PROJECT_NAME} ${QT_QTCORE_LIBRARIES} )
+else()
+    qt5_wrap_cpp(hdrs_moc ${hdrs} ${pe_hdrs} ${dllparse_hdrs})
+    target_link_libraries( ${PROJECT_NAME} Qt5::Core)
+endif()
+
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
@@ -130,8 +147,9 @@ endif()
 
 # dependencies
 if (VIDI_USE_UDIS86)
-    add_dependencies(mini_disasm bearparser libudis86 )
+    add_dependencies(${PROJECT_NAME} bearparser libudis86 )
 else()
-    add_dependencies(mini_disasm bearparser capstone-static)
+    add_dependencies(${PROJECT_NAME} bearparser capstone-static)
 endif()
+
 

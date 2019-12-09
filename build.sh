@@ -31,7 +31,7 @@ mkdir build
 echo "[+] build directory created"
 cd build
 mkdir $(pwd)/out
-cmake -G "CodeLite - Unix Makefiles" -DCMAKE_INSTALL_PREFIX:PATH=$(pwd)/out ..
+cmake -G "CodeLite - Unix Makefiles" -DCMAKE_INSTALL_PREFIX:PATH=$(pwd)/out/ ..
 cmake --build . --target install --config Release
 
 

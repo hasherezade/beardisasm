@@ -14,6 +14,7 @@ set ( M_UDIS86 "udis86" )
 set (CAPSTONE_DIR "${CMAKE_SOURCE_DIR}/${M_CAPSTONE}" CACHE PATH "Capstone main path")
 set (CAPSTONE_INC "${CAPSTONE_DIR}/include" CACHE PATH "Capstone include path")
 
+#capstone options:
 option(CAPSTONE_BUILD_STATIC_RUNTIME "Embed static runtime" OFF)
 option(CAPSTONE_BUILD_STATIC "Build static library" ON)
 option(CAPSTONE_BUILD_SHARED "Build shared library" OFF)
@@ -32,7 +33,9 @@ option(CAPSTONE_X86_SUPPORT "x86 support" ON)
 option(CAPSTONE_X86_REDUCE "x86 with reduce instruction sets to minimize library" OFF)
 option(CAPSTONE_X86_ATT_DISABLE "Disable x86 AT&T syntax" ON)
 
+#project options
 option(USE_UDIS86 "Build with udis86" OFF)
+option(USE_QT4 "Use Qt4 (Qt5 by default)" OFF )
 
 set( UDIS86_DIR "${CMAKE_SOURCE_DIR}/${M_UDIS86}" CACHE PATH "Udis86 main path")
 
@@ -61,12 +64,5 @@ include_directories (${CAPSTONE_INC})
 set (CAPSTONE_LIB $<TARGET_FILE:capstone-static> CACHE FILE  CapstoneLib)
 
 add_subdirectory (disasm-cli)
-
-# dependencies
-if (USE_UDIS86)
-    add_dependencies(mini_disasm bearparser libudis86)
-else()
-    add_dependencies(mini_disasm bearparser capstone-static)
-endif()
 
 
