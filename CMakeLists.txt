@@ -65,4 +65,5 @@ set (CAPSTONE_LIB $<TARGET_FILE:capstone-static> CACHE PATH  CapstoneLib)
 
 add_subdirectory (disasm-cli)
 
+add_dependencies(disasm-cli bearparser capstone-static mini_disasm)
 
