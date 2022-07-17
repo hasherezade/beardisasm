@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 2.8.13)
+cmake_minimum_required (VERSION 3.0)
 
 SET(COMMIT_HASH "test" CACHE STRING "Project build info")
 message("COMMIT_HASH=${COMMIT_HASH}")
