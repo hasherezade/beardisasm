@@ -41,7 +41,7 @@ build_script:
   
 after_build:
   - mkdir %artifactName%
-  - cp -r commander/%CONFIGURATION%/* %artifactName%
+  - cp -r disasm-cli/%CONFIGURATION%/* %artifactName%
   - cp %QT5%\bin\Qt5Core.dll %artifactName%
   
 artifacts:
