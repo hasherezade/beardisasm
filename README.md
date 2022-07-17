@@ -7,6 +7,7 @@ A wrapper for capstone + bearparser
 ## Clone
 
 Clone the project along with its submodules:
-```
+
+```console
 git clone --recursive https://github.com/hasherezade/beardisasm.git
 ```
