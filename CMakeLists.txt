@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 2.8.13)
+cmake_minimum_required (VERSION 3.0)
 project (beardisasm)
 
 SET(COMMIT_HASH "" CACHE STRING "Commit Hash")
@@ -50,18 +50,18 @@ set (COMMANDER_DIR "${CMAKE_SOURCE_DIR}/${M_COMMANDER}" CACHE PATH "Tester main 
 # libs
 if (VIDI_USE_UDIS86)
     add_subdirectory(${M_UDIS86})
-    set(UDIS86_LIB $<TARGET_FILE:libudis86> CACHE FILE "Udis86 library path")
+    set(UDIS86_LIB $<TARGET_FILE:libudis86> CACHE PATH "Udis86 library path")
 endif ()
 
 add_subdirectory (${M_BEARPARSER})
-set (PARSER_LIB $<TARGET_FILE:bearparser> CACHE FILE "BearParser library path")
+set (PARSER_LIB $<TARGET_FILE:bearparser> CACHE PATH "BearParser library path")
 
 add_subdirectory (${M_MINIDIS})
-set (MINIDIS_LIB $<TARGET_FILE:mini_disasm> CACHE FILE "MiniDisasm library path")
+set (MINIDIS_LIB $<TARGET_FILE:mini_disasm> CACHE PATH "MiniDisasm library path")
 
 add_subdirectory (${CAPSTONE_DIR})
 include_directories (${CAPSTONE_INC})
-set (CAPSTONE_LIB $<TARGET_FILE:capstone-static> CACHE FILE  CapstoneLib)
+set (CAPSTONE_LIB $<TARGET_FILE:capstone-static> CACHE PATH  CapstoneLib)
 
 add_subdirectory (disasm-cli)
 
