@@ -79,10 +79,30 @@ TargetValue CapstoneChunk::fetchTargetAddr(cs_detail *detail)
 }
 //---
 
-mnem_type CapstoneChunk::fetchMnemType(const x86_insn cMnem)
+bool BelongsToGroup(const cs_insn insn, const x86_insn_group group)
 {
-    if (cMnem >= X86_INS_JAE && cMnem <= X86_INS_JS) {
-        if (cMnem == X86_INS_JMP || cMnem == X86_INS_LJMP) return MT_JUMP;
+    cs_detail *detail = insn.detail;
+    if (!detail) return false;
+    
+    if (detail->groups_count == 0) {
+        return false;
+    }
+    for (int n = 0; n < detail->groups_count; n++) {
+        if (detail->groups[n] == group) {
+            return true;
+        }
+    }
+    return false;
+}
+
+mnem_type CapstoneChunk::fetchMnemType(const cs_insn &insn)
+{
+    const unsigned int cMnem = insn.id;
+
+    if (cMnem == x86_insn::X86_INS_JMP || cMnem == x86_insn::X86_INS_LJMP) {
+        return MT_JUMP;
+    }
+    if (cMnem >= x86_insn::X86_INS_JAE && cMnem <= x86_insn::X86_INS_JS) {
         return MT_COND_JUMP;
     }
     if (cMnem >= X86_INS_MOV && cMnem <= X86_INS_MOVZX) {

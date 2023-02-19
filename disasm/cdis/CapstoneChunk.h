@@ -25,7 +25,7 @@ public:
 protected:
     virtual void initStrings()
     {
-        m_disasmString = QString(m_insn.mnemonic) + " " + QString(m_insn.op_str);
+        m_disasmString = QString(m_insn.mnemonic) + " " + QString(m_insn.op_str);// + " id: " + QString::number(m_insn.id, 10); 
         m_hexStr = printBytes((uint8_t*) m_insn.bytes, m_insn.size);
     }
 
@@ -33,7 +33,7 @@ protected:
 
     mnem_type fetchMnemType() const
     {
-        return CapstoneChunk::fetchMnemType(static_cast<x86_insn>(m_insn.id));
+        return CapstoneChunk::fetchMnemType(m_insn);
     }
 
     virtual offset_t getOffset() const { return this->m_insn.address; }
@@ -42,7 +42,7 @@ protected:
 private:
     virtual bool fetchTargetAddr(const size_t argNum, TargetValue &targetVal, cs_detail *detail) const;
     TargetValue fetchTargetAddr(cs_detail *detail);
-    static mnem_type fetchMnemType(const x86_insn cMnem);
+    static mnem_type fetchMnemType(const cs_insn &insn);
     
     const cs_insn m_insn;
     size_t m_maxArgs;

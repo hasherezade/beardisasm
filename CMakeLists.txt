@@ -33,6 +33,17 @@ option(CAPSTONE_X86_SUPPORT "x86 support" ON)
 option(CAPSTONE_X86_REDUCE "x86 with reduce instruction sets to minimize library" OFF)
 option(CAPSTONE_X86_ATT_DISABLE "Disable x86 AT&T syntax" ON)
 
+option(CAPSTONE_M68K_SUPPORT "M68K support" OFF)
+option(CAPSTONE_MOS65XX_SUPPORT "MOS65XX support" OFF)
+option(CAPSTONE_SH_SUPPORT "SH support" OFF)
+option(CAPSTONE_M680X_SUPPORT "M680X support" OFF)
+
+option(CAPSTONE_TMS320C64X_SUPPORT "TMS320C64X support" OFF)
+option(CAPSTONE_EVM_SUPPORT "EVM support" OFF)
+option(CAPSTONE_WASM_SUPPORT "WASM support" OFF)
+option(CAPSTONE_BPF_SUPPORT "BPF support" OFF)
+option(CAPSTONE_RISCV_SUPPORT "RISCV support" OFF)
+
 #project options
 option(USE_UDIS86 "Build with udis86" OFF)
 option(USE_QT4 "Use Qt4 (Qt5 by default)" OFF )
@@ -61,9 +72,9 @@ set (MINIDIS_LIB $<TARGET_FILE:mini_disasm> CACHE PATH "MiniDisasm library path"
 
 add_subdirectory (${CAPSTONE_DIR})
 include_directories (${CAPSTONE_INC})
-set (CAPSTONE_LIB $<TARGET_FILE:capstone-static> CACHE PATH  CapstoneLib)
+set (CAPSTONE_LIB $<TARGET_FILE:capstone> CACHE PATH  CapstoneLib)
 
 add_subdirectory (disasm-cli)
 
-add_dependencies(disasm-cli bearparser capstone-static mini_disasm)
+add_dependencies(disasm-cli bearparser capstone mini_disasm)
 

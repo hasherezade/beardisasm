@@ -149,7 +149,7 @@ endif()
 if (VIDI_USE_UDIS86)
     add_dependencies(${PROJECT_NAME} bearparser libudis86 )
 else()
-    add_dependencies(${PROJECT_NAME} bearparser capstone-static)
+    add_dependencies(${PROJECT_NAME} bearparser capstone )
 endif()
 
 

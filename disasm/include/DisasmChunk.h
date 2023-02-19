@@ -13,7 +13,7 @@ class DisasmChunk : public AddrConverter {
 public:
     const static size_t MAX_ARG_NUM;
 
-    DisasmChunk(offset_t startOffset,Executable *parent)
+    DisasmChunk(offset_t startOffset, Executable *parent)
         : m_Exe(parent), m_startOffset(startOffset), m_bitMode(parent->getBitMode())
     {
     }
