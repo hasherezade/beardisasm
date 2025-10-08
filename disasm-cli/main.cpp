@@ -4,6 +4,9 @@
 #include <bearparser/bearparser.h>
 #include <beardisasm.h>
 
+#include <iostream>
+#include <fstream>
+
 #define MINBUF 0x200
 
 using namespace minidis;
@@ -52,6 +55,16 @@ QString getFileName(QString fullPath)
     return fullPath.mid(lastSlashIndex + 1);
 }
 
+int get_func_type(size_t count)
+{
+    if (count == 172 || count == 173)
+        return 1;
+    if (count == 98 || count == 99)
+        return 2;
+    if (count == 56 || count == 57)
+        return 3;
+    return 0;
+}
 //Disasm:
 
 offset_t funcNameToOffset(Executable *exe, const QString funcName, const Executable::addr_type aType = Executable::RAW)
@@ -68,7 +81,7 @@ offset_t funcNameToOffset(Executable *exe, const QString funcName, const Executa
     return INVALID_ADDR;
 }
 
-void disasmPeFile(PEFile *exe, offset_t func_offset)
+void _disasmPeFile(PEFile *exe, offset_t func_offset, std::ofstream &outFile)
 {
     if (!exe) return;
 
@@ -80,51 +93,57 @@ void disasmPeFile(PEFile *exe, offset_t func_offset)
     QMap<offset_t, QString> entrypoints;
     exe->getAllEntryPoints(entrypoints, Executable::VA);
 
+    std::vector<QString> vec;
+    size_t i = 0;
     if (!disasm1.fillTable(basicSettings)) return;
-    for (size_t i = 0; ; i++) {
+    for (i = 0; ; i++) {
         DisasmChunk* chunk = disasm1.getChunkAtIndex(i);
         if (!chunk) break;
-        std::cout << std::hex << disasm1.getOffset(i, Executable::VA)
-            << " : "
-            << chunk->toString().toStdString();
-            
-        offset_t target = chunk->getTargetAddr();
-        QString str = disasm1.getStringAt(target, chunk->getTargetAddrType());
-        if (str.length() > 0) {
-            std::cout << " : " << str.toStdString();
-        }
-        if (chunk->isBranching()) {
-            offset_t targetVA = exe->convertAddr(target, chunk->getTargetAddrType(), Executable::VA);
-            if (targetVA != INVALID_ADDR) {
-                std::cout << " -> "
-                    << std::hex << targetVA;
-                auto fItr = entrypoints.find(targetVA);
-                if (fItr != entrypoints.end()) {
-                    std::cout << " ; " << g_fileName.toStdString() << "." << fItr->toStdString();
-                }
-            }
-        }
-        if (disasm1.isImportCall(i)) {
-            std::cout << " ; " << disasm1.getImportName(target, chunk->getTargetAddrType()).toStdString();
-        }
-        std::cout << "\n";
+        
+        const QString disasmLine = chunk->toString();
+        if (!disasmLine.contains("movabs")) continue;
+        
+        //std::cout << std::hex << disasm1.getOffset(i, Executable::VA)
+        //    << " : "
+        QStringList parts = disasmLine.split(',');
+        QString hexValue = parts.last().trimmed();
+        vec.push_back(hexValue);
+        
     }
+    outFile << get_func_type(i) << ",";
+    outFile << "[ ";
+    for (auto itr = vec.begin(); itr != vec.end(); ++itr) {
+        outFile << itr->toStdString() << " ";
+    }
+    outFile << "]";
 }
 
-int main(int argc, char *argv[])
+void disasmPeFile(PEFile *exe, offset_t func_offset, std::ofstream &outFile)
 {
-    QCoreApplication app(argc, argv);
-
-    ExeFactory::init();
-
-    if (argc < 2) {
-        std::cout << "Bearparser version: " <<  BEARPARSER_VERSION << "\n";
-        std::cout << "Args: <PE file> <func_name>\n";
-        return 0;
+    if (func_offset != INVALID_ADDR) {
+        _disasmPeFile(exe, func_offset, outFile);
+        return;
     }
 
+    QMap<offset_t, QString> entrypoints;
+    exe->getAllEntryPoints(entrypoints, Executable::RAW);
+    
+    for (auto itr = entrypoints.begin(); itr != entrypoints.end(); ++itr) {
+        const QString funcName = itr.value();
+        if (!funcName.contains("_Z21f")) continue;
+        
+        const offset_t offset = itr.key();
+        outFile << g_fileName.toStdString() 
+            << "," << funcName.toStdString() << ",";
+        _disasmPeFile(exe, offset, outFile);
+        outFile << "\n";
+    }
+    return;
+}
+
+int parseFile(QString filePath, offset_t func_raw_addr, std::ofstream &outFile)
+{
     int status = 0;
-    QString filePath = QString(argv[1]);
     g_fileName = getFileName(filePath);
     offset_t offset = INVALID_ADDR;
 
@@ -136,7 +155,7 @@ int main(int argc, char *argv[])
         if (exeType == ExeFactory::NONE) {
            std::cerr << "Type not supported\n";
            ExeFactory::destroy();
-           return 1;
+           return (-1);
         }
 #ifdef _DEBUG
         std::cout << "Type: " << ExeFactory::getTypeName(exeType).toStdString() << std::endl;
@@ -150,23 +169,9 @@ int main(int argc, char *argv[])
 
         //std::cout << "Parsing executable..." << std::endl;
         Executable *exe = ExeFactory::build(buf, exeType);
-
-        const offset_t ep_raw = exe->getEntryPoint(Executable::RAW);
-        offset_t func_raw_addr = ep_raw;
-        if (argc >= 2) {
-            QString funcName = QString(argv[2]);
-            offset_t addr = funcNameToOffset(exe, funcName);
-            if (addr != INVALID_ADDR) {
-                func_raw_addr = addr;
-#ifdef _DEBUG
-                std::cout << "[" << g_fileName.toStdString() << "." << funcName.toStdString() << "]" << std::endl;
-#endif //_DEBUG
-            }
-        }
-        
         PEFile *pe = dynamic_cast<PEFile*>(exe);
         if (pe) {
-            disasmPeFile(pe, func_raw_addr);
+            disasmPeFile(pe, func_raw_addr, outFile);
         }
         
         delete exe;
@@ -178,4 +183,49 @@ int main(int argc, char *argv[])
     }
     ExeFactory::destroy();
     return status;
+}
+
+int main(int argc, char *argv[])
+{
+    QCoreApplication app(argc, argv);
+
+    ExeFactory::init();
+
+    if (argc < 4) {
+        std::cout << "Bearparser version: " <<  BEARPARSER_VERSION << "\n";
+        std::cout << "Args: <dir_path> <start> <stop>\n";
+        return 0;
+    }
+    
+    bool bStatus = false;
+    size_t start = QString(argv[2]).toUInt(&bStatus,10);
+    if (!bStatus) {
+        std::cout << "Start is not a valid number!\n";
+        return 0;
+    }
+    size_t stop = QString(argv[3]).toUInt(&bStatus,10);
+    if (!bStatus) {
+        std::cout << "Stop is not a valid number!\n";
+        return 0;
+    }
+    if (stop < start) {
+        std::cerr << "Invalid stop: " << std::dec << stop << " < " << start << std::endl;
+        return (-1);
+    }
+    std::string outFilename = std::string("dlls_list_") + argv[2] + "_" + argv[3] + ".csv";
+    std::ofstream outFile(outFilename);   // open output file
+    if (!outFile.is_open()) {
+        std::cerr << "Could not open file for writing!" << std::endl;
+        return (-1);
+    }
+
+    QString dirPath = QString(argv[1]);
+    for (size_t i = start; i < stop; i++) {
+        QString fileName = QString("%1.dll").arg(i, 4, 10, QChar('0'));
+        QString filePath = dirPath + "//" + fileName;
+        parseFile(filePath, INVALID_ADDR, outFile);
+    }
+    
+    outFile.close();   // always close the file
+    return 0;
 }
