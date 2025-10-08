@@ -10,6 +10,8 @@ using namespace minidis;
 
 QString g_fileName;
 
+//Utils:
+
 FileView* tryLoading(QString &fName)
 {
     FileView *fileView = NULL;
@@ -28,6 +30,42 @@ FileView* tryLoading(QString &fName)
     } while (!fileView);
     
     return fileView;
+}
+
+offset_t convertHex(const QString &str)
+{
+    offset_t offset = INVALID_ADDR;
+    bool bStatus = false;
+    offset = str.toUInt(&bStatus,16);
+    if (!bStatus) {
+        return INVALID_ADDR;
+    }
+    return offset;
+}
+
+QString getFileName(QString fullPath)
+{
+    int lastSlashIndex = fullPath.lastIndexOf(QChar('/'));
+    if (lastSlashIndex == -1) {
+        lastSlashIndex = fullPath.lastIndexOf(QChar('\\'));  // For Windows paths
+    }
+    return fullPath.mid(lastSlashIndex + 1);
+}
+
+//Disasm:
+
+offset_t funcNameToOffset(Executable *exe, const QString funcName, const Executable::addr_type aType = Executable::RAW)
+{
+    QMap<offset_t, QString> entrypoints;
+    if (!exe->getAllEntryPoints(entrypoints, aType)) {
+        return INVALID_ADDR;
+    }
+    for (auto itr = entrypoints.begin(); itr != entrypoints.end(); ++itr) {
+        if (itr.value() == funcName) {
+            return itr.key();
+        }
+    }
+    return INVALID_ADDR;
 }
 
 void disasmPeFile(PEFile *exe, offset_t func_offset)
@@ -71,40 +109,6 @@ void disasmPeFile(PEFile *exe, offset_t func_offset)
         }
         std::cout << "\n";
     }
-}
-
-offset_t convertHex(const QString &str)
-{
-    offset_t offset = INVALID_ADDR;
-    bool bStatus = false;
-    offset = str.toUInt(&bStatus,16);
-    if (!bStatus) {
-        return INVALID_ADDR;
-    }
-    return offset;
-}
-
-QString getFileName(QString fullPath)
-{
-    int lastSlashIndex = fullPath.lastIndexOf(QChar('/'));
-    if (lastSlashIndex == -1) {
-        lastSlashIndex = fullPath.lastIndexOf(QChar('\\'));  // For Windows paths
-    }
-    return fullPath.mid(lastSlashIndex + 1);
-}
-
-offset_t funcNameToOffset(Executable *exe, const QString funcName, const Executable::addr_type aType = Executable::RAW)
-{
-    QMap<offset_t, QString> entrypoints;
-    if (!exe->getAllEntryPoints(entrypoints, aType)) {
-        return INVALID_ADDR;
-    }
-    for (auto itr = entrypoints.begin(); itr != entrypoints.end(); ++itr) {
-        if (itr.value() == funcName) {
-            return itr.key();
-        }
-    }
-    return INVALID_ADDR;
 }
 
 int main(int argc, char *argv[])
@@ -154,7 +158,9 @@ int main(int argc, char *argv[])
             offset_t addr = funcNameToOffset(exe, funcName);
             if (addr != INVALID_ADDR) {
                 func_raw_addr = addr;
+#ifdef _DEBUG
                 std::cout << "[" << g_fileName.toStdString() << "." << funcName.toStdString() << "]" << std::endl;
+#endif //_DEBUG
             }
         }
         
