@@ -83,18 +83,19 @@ int main(int argc, char *argv[])
 
     if (argc < 2) {
         std::cout << "Bearparser version: " <<  BEARPARSER_VERSION << "\n";
-        std::cout << "Args: <PE file> <func RVA>\n";
+        std::cout << "Args: <PE file> <RVA>\n";
         return 0;
     }
 
     int status = 0;
-    QString fName = QString(argv[1]);
+    QString fileName = QString(argv[1]);
     offset_t offset = INVALID_ADDR;
+    
     if (argc >= 2) {
         offset = convertHex(QString(argv[2]));
     }
     try {
-        FileView* fileView = tryLoading(fName);
+        FileView* fileView = tryLoading(fileName);
         if (!fileView) return -1;
 
         ExeFactory::exe_type exeType = ExeFactory::findMatching(fileView);

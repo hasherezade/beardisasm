@@ -46,7 +46,8 @@ option(CAPSTONE_RISCV_SUPPORT "RISCV support" OFF)
 
 #project options
 option(USE_UDIS86 "Build with udis86" OFF)
-option(USE_QT4 "Use Qt4 (Qt5 by default)" OFF )
+option(USE_QT4 "Use Qt4 (Qt6 by default)" OFF )
+option(USE_QT5 "Use Qt5 (Qt6 by default)" ON )
 
 set( UDIS86_DIR "${CMAKE_SOURCE_DIR}/${M_UDIS86}" CACHE PATH "Udis86 main path")
 
