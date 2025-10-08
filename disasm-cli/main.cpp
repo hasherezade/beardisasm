@@ -36,6 +36,8 @@ void disasmPeFile(PEFile *exe, offset_t func_offset)
     
     minidis::PeDisasm disasm1(exe);
     disasm1.init(func_offset);
+
+
     if (!disasm1.fillTable(basicSettings)) return;
     for (size_t i = 0; ; i++) {
         DisasmChunk* chunk = disasm1.getChunkAtIndex(i);
@@ -55,10 +57,9 @@ void disasmPeFile(PEFile *exe, offset_t func_offset)
                 std::cout << " -> "
                     << std::hex << exe->convertAddr(target, chunk->getTargetAddrType(), Executable::VA);
             }
-            if (disasm1.isImportCall(i)) {
-                std::cout << " ; " << disasm1.getImportName(target, chunk->getTargetAddrType()).toStdString();
-            }
-            std::cout << "\n----";
+        }
+        if (disasm1.isImportCall(i)) {
+            std::cout << " ; " << disasm1.getImportName(target, chunk->getTargetAddrType()).toStdString();
         }
         std::cout << "\n";
     }
