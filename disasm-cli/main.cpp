@@ -8,6 +8,8 @@
 
 using namespace minidis;
 
+QString g_fileName;
+
 FileView* tryLoading(QString &fName)
 {
     FileView *fileView = NULL;
@@ -36,7 +38,9 @@ void disasmPeFile(PEFile *exe, offset_t func_offset)
     
     minidis::PeDisasm disasm1(exe);
     disasm1.init(func_offset);
-
+    
+    QMap<offset_t, QString> entrypoints;
+    exe->getAllEntryPoints(entrypoints, Executable::VA);
 
     if (!disasm1.fillTable(basicSettings)) return;
     for (size_t i = 0; ; i++) {
@@ -52,10 +56,14 @@ void disasmPeFile(PEFile *exe, offset_t func_offset)
             std::cout << " : " << str.toStdString();
         }
         if (chunk->isBranching()) {
-                
-            if (target != INVALID_ADDR) {
+            offset_t targetVA = exe->convertAddr(target, chunk->getTargetAddrType(), Executable::VA);
+            if (targetVA != INVALID_ADDR) {
                 std::cout << " -> "
-                    << std::hex << exe->convertAddr(target, chunk->getTargetAddrType(), Executable::VA);
+                    << std::hex << targetVA;
+                auto fItr = entrypoints.find(targetVA);
+                if (fItr != entrypoints.end()) {
+                    std::cout << " ; " << g_fileName.toStdString() << "." << fItr->toStdString();
+                }
             }
         }
         if (disasm1.isImportCall(i)) {
@@ -76,6 +84,29 @@ offset_t convertHex(const QString &str)
     return offset;
 }
 
+QString getFileName(QString fullPath)
+{
+    int lastSlashIndex = fullPath.lastIndexOf(QChar('/'));
+    if (lastSlashIndex == -1) {
+        lastSlashIndex = fullPath.lastIndexOf(QChar('\\'));  // For Windows paths
+    }
+    return fullPath.mid(lastSlashIndex + 1);
+}
+
+offset_t funcNameToOffset(Executable *exe, const QString funcName, const Executable::addr_type aType = Executable::RAW)
+{
+    QMap<offset_t, QString> entrypoints;
+    if (!exe->getAllEntryPoints(entrypoints, aType)) {
+        return INVALID_ADDR;
+    }
+    for (auto itr = entrypoints.begin(); itr != entrypoints.end(); ++itr) {
+        if (itr.value() == funcName) {
+            return itr.key();
+        }
+    }
+    return INVALID_ADDR;
+}
+
 int main(int argc, char *argv[])
 {
     QCoreApplication app(argc, argv);
@@ -84,19 +115,17 @@ int main(int argc, char *argv[])
 
     if (argc < 2) {
         std::cout << "Bearparser version: " <<  BEARPARSER_VERSION << "\n";
-        std::cout << "Args: <PE file> <RVA>\n";
+        std::cout << "Args: <PE file> <func_name>\n";
         return 0;
     }
 
     int status = 0;
-    QString fileName = QString(argv[1]);
+    QString filePath = QString(argv[1]);
+    g_fileName = getFileName(filePath);
     offset_t offset = INVALID_ADDR;
-    
-    if (argc >= 2) {
-        offset = convertHex(QString(argv[2]));
-    }
+
     try {
-        FileView* fileView = tryLoading(fileName);
+        FileView* fileView = tryLoading(filePath);
         if (!fileView) return -1;
 
         ExeFactory::exe_type exeType = ExeFactory::findMatching(fileView);
@@ -105,8 +134,9 @@ int main(int argc, char *argv[])
            ExeFactory::destroy();
            return 1;
         }
-        
+#ifdef _DEBUG
         std::cout << "Type: " << ExeFactory::getTypeName(exeType).toStdString() << std::endl;
+#endif //_DEBUG
         bufsize_t readableSize = fileView->getContentSize();
         bufsize_t allocSize = (readableSize < MINBUF) ? MINBUF : readableSize;
 
@@ -116,10 +146,18 @@ int main(int argc, char *argv[])
 
         //std::cout << "Parsing executable..." << std::endl;
         Executable *exe = ExeFactory::build(buf, exeType);
-        offset_t func_raw_addr = exe->convertAddr(offset, Executable::RVA, Executable::RAW);
-        if (func_raw_addr == INVALID_ADDR) {
-            func_raw_addr = exe->getEntryPoint(Executable::RAW);
+
+        const offset_t ep_raw = exe->getEntryPoint(Executable::RAW);
+        offset_t func_raw_addr = ep_raw;
+        if (argc >= 2) {
+            QString funcName = QString(argv[2]);
+            offset_t addr = funcNameToOffset(exe, funcName);
+            if (addr != INVALID_ADDR) {
+                func_raw_addr = addr;
+                std::cout << "[" << g_fileName.toStdString() << "." << funcName.toStdString() << "]" << std::endl;
+            }
         }
+        
         PEFile *pe = dynamic_cast<PEFile*>(exe);
         if (pe) {
             disasmPeFile(pe, func_raw_addr);
@@ -127,8 +165,6 @@ int main(int argc, char *argv[])
         
         delete exe;
         delete buf;
-
-        std::cout << "Bye!" << std::endl;
         
     } catch (CustomException &e) {
         std::cerr << "[ERROR] " << e.what() << std::endl;
